@@ -31,8 +31,14 @@ for (const fileName of modules) {
 }
 
 const llvmCandidates = [
-  process.env.LLVM_BIN ? path.join(process.env.LLVM_BIN, "clang++.exe") : null,
+  process.env.LLVM_BIN
+    ? path.join(
+        process.env.LLVM_BIN,
+        process.platform === "win32" ? "clang++.exe" : "clang++",
+      )
+    : null,
   path.join(root, "tools", "clang+llvm-22.1.2-x86_64-pc-windows-msvc", "bin", "clang++.exe"),
+  "clang++",
   "clang++.exe",
 ].filter(Boolean);
 
@@ -41,7 +47,10 @@ async function findClang() {
     try {
       if (candidate.includes(path.sep)) {
         await access(candidate, fsConstants.X_OK);
+        return candidate;
       }
+
+      await execFileAsync(candidate, ["--version"]);
       return candidate;
     } catch {
       continue;

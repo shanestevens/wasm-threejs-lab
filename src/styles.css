@@ -541,6 +541,27 @@ output {
   gap: 18px;
 }
 
+.frosted-showcase {
+  margin-top: 84px;
+}
+
+.frosted-showcase__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.4fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.frosted-showcase__viewer .demo-card__stage {
+  min-height: 720px;
+}
+
+.frosted-showcase__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .demo-card[data-demo="shaderfx"] {
   grid-column: span 2;
 }
@@ -603,6 +624,10 @@ output {
   }
 
   .pbr-showcase__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .frosted-showcase__grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,6 +1,7 @@
 import "./styles.css";
 
 import { IndexedGeometryDemo } from "./demos/indexed-geometry-demo";
+import { FrostedBlurLensDemo } from "./demos/frosted-blur-lens-demo";
 import { LightingStudioDemo } from "./demos/lighting-studio-demo";
 import { PbrLookdevBoardDemo } from "./demos/pbr-lookdev-board-demo";
 import { ShaderFxBenchDemo } from "./demos/shader-fx-bench-demo";
@@ -347,6 +348,7 @@ app.innerHTML = `
           <span>Shadow rigs</span>
           <span>PBR lookdev</span>
           <span>Shader FX</span>
+          <span>Frosted glass</span>
         </div>
       </div>
       <aside class="hero__snippet">
@@ -548,6 +550,89 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
       </div>
     </section>
 
+    <section class="frosted-showcase swarm-lab" data-demo="frostlab">
+      <div class="swarm-lab__top">
+        <span class="demo-card__step">Step 04E</span>
+        <button class="demo-card__fullscreen" type="button" data-action="fullscreen">Full screen</button>
+      </div>
+      <div class="section-heading section-heading--compact">
+        <p class="section-heading__eyebrow">GPU Lab</p>
+        <h2>Frosted Blur Lens</h2>
+      </div>
+      <p class="swarm-lab__lede">
+        Use transmission, roughness, thickness, and a little vertex wobble to turn one mesh into a frosted lens that blurs and bends the readback board behind it.
+      </p>
+      <div class="frosted-showcase__grid">
+        <div class="frosted-showcase__viewer">
+          <div class="demo-card__stage">
+            <canvas aria-label="Frosted blur lens demo"></canvas>
+            <span class="demo-card__fps">0 FPS</span>
+          </div>
+        </div>
+        <div class="frosted-showcase__sidebar">
+          <details class="debug-panel" open>
+            <summary>Debug</summary>
+            <div class="control-group">
+              <h3>View</h3>
+              <label class="control-row">
+                <span>wireframe</span>
+                <input type="checkbox" data-control="frost-wireframe" />
+              </label>
+              <label class="control-row">
+                <span>camera</span>
+                <select data-control="frost-camera">
+                  <option value="orbit" selected>Orbit</option>
+                  <option value="front">Front</option>
+                  <option value="hero">Hero</option>
+                </select>
+              </label>
+              <label class="control-row">
+                <span>auto rotate</span>
+                <input type="checkbox" checked data-control="frost-auto-rotate" />
+              </label>
+            </div>
+            <div class="control-group">
+              <h3>Frosted glass</h3>
+              <label class="control-row">
+                <span>frost</span>
+                <input type="range" min="0.02" max="0.85" step="0.01" value="0.42" data-control="frost-roughness" />
+                <output>0.42</output>
+              </label>
+              <label class="control-row">
+                <span>thickness</span>
+                <input type="range" min="0.2" max="2.4" step="0.05" value="1.4" data-control="frost-thickness" />
+                <output>1.40</output>
+              </label>
+              <label class="control-row">
+                <span>ior</span>
+                <input type="range" min="1" max="1.8" step="0.01" value="1.14" data-control="frost-ior" />
+                <output>1.14</output>
+              </label>
+              <label class="control-row">
+                <span>wobble</span>
+                <input type="range" min="0" max="0.28" step="0.01" value="0.11" data-control="frost-wobble" />
+                <output>0.11</output>
+              </label>
+              <label class="control-row">
+                <span>animate</span>
+                <input type="checkbox" checked data-control="frost-animate" />
+              </label>
+            </div>
+          </details>
+          <p class="demo-card__note">
+            This one is about reading through the material instead of just at it. The colored bars and test board behind the lens make blur,
+            refraction, and thickness much easier to judge than an isolated hero object or plain environment map.
+          </p>
+          <div class="demo-card__tags">
+            <span class="demo-card__tag">MeshPhysicalMaterial</span>
+            <span class="demo-card__tag">Transmission</span>
+            <span class="demo-card__tag">Frosted glass</span>
+            <span class="demo-card__tag">Vertex wobble</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="swarm-section swarm-lab" data-demo="terrain">
       <div class="swarm-lab__top">
         <span class="demo-card__step">Benchmark</span>
@@ -679,6 +764,7 @@ try {
     new ShadowPlaygroundDemo(document.querySelector<HTMLElement>('[data-demo="shadow"]')!),
     new PbrLookdevBoardDemo(document.querySelector<HTMLElement>('[data-demo="pbrlab"]')!),
     new ShaderFxBenchDemo(document.querySelector<HTMLElement>('[data-demo="shaderfx"]')!),
+    new FrostedBlurLensDemo(document.querySelector<HTMLElement>('[data-demo="frostlab"]')!),
     new TerrainMeshingDemo(document.querySelector<HTMLElement>('[data-demo="terrain"]')!, wasm, terrainCppWasm),
   ];
 

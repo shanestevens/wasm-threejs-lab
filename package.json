@@ -1,0 +1,23 @@
+{
+  "name": "wasmtest",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:wasm": "node ./scripts/build-wasm.mjs",
+    "predev": "npm run build:wasm",
+    "prebuild": "npm run build:wasm"
+  },
+  "dependencies": {
+    "three": "^0.181.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.183.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "wabt": "^1.0.38"
+  }
+}

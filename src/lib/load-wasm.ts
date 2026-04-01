@@ -28,6 +28,8 @@ export const WASM_LAYOUT = {
   terrainEnd: TERRAIN_POSITIONS_OFFSET + TERRAIN_ATTRIBUTE_BYTES * 3 + TERRAIN_INDEX_BYTES,
 } as const;
 
+const WASM_ASSET_VERSION = `terrain-${TERRAIN_MAX_RESOLUTION}-${WASM_LAYOUT.terrainEnd}`;
+
 export interface LabWasmExports extends WebAssembly.Exports {
   memory: WebAssembly.Memory;
   fill_triangle(positionPtr: number, colorPtr: number, phase: number): void;
@@ -96,14 +98,41 @@ async function instantiateModule(url: string): Promise<WebAssembly.Instance> {
   return result.instance;
 }
 
+function ensureMemoryBytes(memory: WebAssembly.Memory, requiredBytes: number): void {
+  const currentBytes = memory.buffer.byteLength;
+
+  if (currentBytes >= requiredBytes) {
+    return;
+  }
+
+  const missingBytes = requiredBytes - currentBytes;
+  const pageSize = 64 * 1024;
+  const missingPages = Math.ceil(missingBytes / pageSize);
+
+  try {
+    memory.grow(missingPages);
+  } catch (error) {
+    throw new Error(
+      `WASM memory is too small for the current terrain buffers. Required ${requiredBytes} bytes, got ${currentBytes} bytes.`,
+      { cause: error },
+    );
+  }
+}
+
 export async function loadLabWasm(): Promise<LabWasmExports> {
   const wasmUrl = new URL(`${import.meta.env.BASE_URL}wasm/lab.wasm`, window.location.origin);
+  wasmUrl.searchParams.set("v", WASM_ASSET_VERSION);
   const instance = await instantiateModule(wasmUrl.toString());
-  return instance.exports as unknown as LabWasmExports;
+  const exports = instance.exports as unknown as LabWasmExports;
+  ensureMemoryBytes(exports.memory, WASM_LAYOUT.terrainEnd);
+  return exports;
 }
 
 export async function loadTerrainCppWasm(): Promise<TerrainCppWasmExports> {
   const wasmUrl = new URL(`${import.meta.env.BASE_URL}wasm/terrain-cpp.wasm`, window.location.origin);
+  wasmUrl.searchParams.set("v", WASM_ASSET_VERSION);
   const instance = await instantiateModule(wasmUrl.toString());
-  return instance.exports as unknown as TerrainCppWasmExports;
+  const exports = instance.exports as unknown as TerrainCppWasmExports;
+  ensureMemoryBytes(exports.memory, WASM_LAYOUT.terrainEnd);
+  return exports;
 }

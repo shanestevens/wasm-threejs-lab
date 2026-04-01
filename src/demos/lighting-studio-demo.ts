@@ -149,9 +149,6 @@ export class LightingStudioDemo extends BaseDemo {
         material.wireframe = value;
       }
     });
-    this.bindCheckbox("lighting-auto-rotate", (value) => {
-      this.setAutoRotate(value);
-    });
     this.bindCheckbox("lighting-helpers", (value) => {
       this.helperGroup.visible = value;
     });

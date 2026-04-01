@@ -4,12 +4,15 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { BaseDemo } from "./base-demo";
 
 type ThemeName = "dark" | "light" | "warm";
-type CameraPreset = "orbit" | "front" | "hero";
 
 type BoardAsset = {
   mesh: THREE.Mesh<THREE.SphereGeometry | THREE.CapsuleGeometry, THREE.MeshPhysicalMaterial>;
-  base: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshStandardMaterial>;
   material: THREE.MeshPhysicalMaterial;
+};
+
+type MaterialDescriptor = {
+  material: THREE.MeshPhysicalMaterial;
+  shape?: "sphere" | "capsule";
 };
 
 function createStripedTexture(colors: string[], diagonal = false): THREE.CanvasTexture {
@@ -98,25 +101,19 @@ function createCheckerTexture(a: string, b: string): THREE.CanvasTexture {
   return texture;
 }
 
-function setCameraPreset(
-  camera: THREE.PerspectiveCamera,
-  controls: BaseDemo["controls"],
-  preset: CameraPreset,
-): void {
-  if (preset === "front") {
-    camera.position.set(0.2, 1.95, 8.4);
-    controls.target.set(0.12, -0.1, -0.28);
-    return;
-  }
-
-  if (preset === "hero") {
-    camera.position.set(6.6, 1.75, 3.8);
-    controls.target.set(0.34, -0.18, 0.08);
-    return;
-  }
-
-  camera.position.set(5.9, 2.25, 6.6);
-  controls.target.set(0.1, -0.14, -0.18);
+function layoutRow(
+  descriptors: MaterialDescriptor[],
+  z: number,
+  xPositions: number[],
+): Array<MaterialDescriptor & { position: [number, number, number] }> {
+  return descriptors.map((descriptor, index) => ({
+    ...descriptor,
+    position: [
+      xPositions[index] ?? 0,
+      descriptor.shape === "capsule" ? -0.67 : -0.54,
+      z,
+    ],
+  }));
 }
 
 export class PbrLookdevBoardDemo extends BaseDemo {
@@ -167,24 +164,23 @@ export class PbrLookdevBoardDemo extends BaseDemo {
       metalness: 0.02,
     });
 
-    const stage = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.26, 5.3), this.stageMaterial);
+    const stage = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.26, 7.3), this.stageMaterial);
     stage.position.set(0, -1.08, 0);
     stage.receiveShadow = true;
 
-    const inset = new THREE.Mesh(new THREE.PlaneGeometry(6.95, 4.55), this.insetMaterial);
+    const inset = new THREE.Mesh(new THREE.PlaneGeometry(9.8, 6.4), this.insetMaterial);
     inset.rotation.x = -Math.PI / 2;
     inset.position.set(0, -0.94, 0);
     inset.receiveShadow = true;
 
-    const wall = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 4.8), this.wallMaterial);
-    wall.position.set(0, 1.4, -2.75);
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(11.2, 5.7), this.wallMaterial);
+    wall.position.set(0, 1.56, -3.76);
     wall.receiveShadow = true;
 
     this.scene.add(stage, inset, wall, this.board);
 
     const sphereGeometry = new THREE.SphereGeometry(0.4, 52, 34);
     const capsuleGeometry = new THREE.CapsuleGeometry(0.26, 0.9, 10, 20);
-    const baseGeometry = new THREE.CylinderGeometry(0.26, 0.3, 0.06, 28);
 
     const zebra = createStripedTexture(["#f7f8fb", "#0d1016", "#f7f8fb", "#121822"], false);
     const swirlBlue = createSwirlTexture("#f2f6ff", "#5f8fff", "#d7e7ff");
@@ -192,46 +188,65 @@ export class PbrLookdevBoardDemo extends BaseDemo {
     const mint = createStripedTexture(["#dcebc8", "#78a56c", "#e7f2d3", "#94b487"], true);
     const checker = createCheckerTexture("#111318", "#f7f8fb");
     this.dynamicTextures.push(zebra, swirlBlue, wood, mint, checker);
+    const xPositions = [-4.35, -3.1, -1.85, -0.6, 0.65, 1.9, 3.15, 4.4];
 
-    const descriptors: Array<{
-      material: THREE.MeshPhysicalMaterial;
-      position: [number, number, number];
-      shape?: "sphere" | "capsule";
-    }> = [
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xf7f8fb, roughness: 0.05, metalness: 1, envMapIntensity: this.envIntensity }), position: [-2.6, 0.24, -1.45], shape: "capsule" },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x0d1016, roughness: 0.12, metalness: 1, envMapIntensity: this.envIntensity }), position: [1.1, 0.22, -1.4], shape: "capsule" },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x0b1116, roughness: 0.04, transmission: 0.94, thickness: 1.1, ior: 1.22, envMapIntensity: this.envIntensity }), position: [-3.2, -0.08, -0.92] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x5879d0, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: this.envIntensity }), position: [-2.5, -0.14, -0.72] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xdbe8ff, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: this.envIntensity }), position: [-1.8, 0.02, -0.8] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xb3a998, roughness: 0.14, metalness: 1, envMapIntensity: this.envIntensity }), position: [-1.1, 0.1, -0.84] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xe3d7bc, roughness: 0.16, metalness: 1, envMapIntensity: this.envIntensity }), position: [-0.38, -0.04, -0.82] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xd6e4ff, roughness: 0.32, clearcoat: 0.8, clearcoatRoughness: 0.09, envMapIntensity: this.envIntensity }), position: [0.32, -0.02, -0.8] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xf2e6ce, roughness: 0.22, transmission: 0.88, thickness: 1.2, ior: 1.28, attenuationColor: new THREE.Color(0xffecb8), attenuationDistance: 0.75, envMapIntensity: this.envIntensity }), position: [1.08, -0.1, -0.76] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xbfceb4, roughness: 0.34, clearcoat: 0.62, clearcoatRoughness: 0.14, envMapIntensity: this.envIntensity }), position: [1.86, -0.02, -0.76] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xe8ddc9, roughness: 0.24, metalness: 0.04, envMapIntensity: this.envIntensity }), position: [2.64, 0.02, -0.7] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xbad5b8, roughness: 0.28, clearcoat: 0.78, clearcoatRoughness: 0.12, envMapIntensity: this.envIntensity }), position: [3.3, 0.22, -0.78], shape: "capsule" },
-
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xf7f8fb, roughness: 0.52, metalness: 0.02, map: zebra, envMapIntensity: this.envIntensity }), position: [-3.6, -0.44, 0.02] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xf8f8ff, roughness: 0.28, metalness: 0.02, map: swirlBlue, envMapIntensity: this.envIntensity }), position: [-2.82, -0.4, 0.16] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xf2dfc7, roughness: 0.44, metalness: 0.02, map: wood, envMapIntensity: this.envIntensity }), position: [-2.02, -0.42, 0.3] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xe9efff, roughness: 0.1, transmission: 0.92, thickness: 1.0, ior: 1.25, attenuationColor: new THREE.Color(0xcfe2ff), attenuationDistance: 0.7, envMapIntensity: this.envIntensity }), position: [-1.16, -0.5, 0.38] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x171626, roughness: 0.24, metalness: 0.04, envMapIntensity: this.envIntensity }), position: [-0.44, -0.42, 0.2] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x5a7ec8, roughness: 0.26, clearcoat: 0.94, clearcoatRoughness: 0.06, envMapIntensity: this.envIntensity }), position: [0.28, -0.36, 0.08] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x0b2018, roughness: 0.34, clearcoat: 0.35, metalness: 0.06, envMapIntensity: this.envIntensity }), position: [1.06, -0.38, 0.18] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xaad0cb, roughness: 0.42, clearcoat: 0.72, clearcoatRoughness: 0.18, envMapIntensity: this.envIntensity }), position: [1.82, -0.44, 0.14] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xd7d8d4, roughness: 0.68, envMapIntensity: this.envIntensity }), position: [2.56, -0.36, 0.12] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xe7dcc0, roughness: 0.38, envMapIntensity: this.envIntensity }), position: [3.2, -0.3, 0.04] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xce7678, roughness: 0.46, clearcoat: 0.88, clearcoatRoughness: 0.14, envMapIntensity: this.envIntensity }), position: [3.94, -0.3, 0.18] },
-
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x0f1116, roughness: 0.18, transmission: 0.42, thickness: 1.2, ior: 1.46, attenuationColor: new THREE.Color(0x0d0f14), attenuationDistance: 0.25, envMapIntensity: this.envIntensity }), position: [-3.1, -0.66, 0.86] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x14284a, roughness: 0.16, sheen: 0.8, sheenColor: new THREE.Color(0xcfe0ff), sheenRoughness: 0.34, envMapIntensity: this.envIntensity }), position: [-2.34, -0.72, 0.82] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x28211d, roughness: 0.22, metalness: 0.08, envMapIntensity: this.envIntensity }), position: [-1.58, -0.72, 0.9] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x212636, roughness: 0.16, metalness: 0.02, iridescence: 1, iridescenceIOR: 1.23, iridescenceThicknessRange: [120, 420], envMapIntensity: this.envIntensity }), position: [-0.82, -0.74, 0.84] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xeef2ff, roughness: 0.18, transmission: 0.96, thickness: 1.5, ior: 1.28, attenuationColor: new THREE.Color(0xd4dfff), attenuationDistance: 0.68, envMapIntensity: this.envIntensity }), position: [-0.04, -0.74, 0.92] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xf2f3f7, roughness: 0.18, metalness: 0.02, map: checker, envMapIntensity: this.envIntensity }), position: [0.74, -0.78, 1.02] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x1b2a1b, roughness: 0.22, metalness: 0.06, clearcoat: 0.22, envMapIntensity: this.envIntensity }), position: [1.54, -0.74, 0.84] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0xe1f0d2, roughness: 0.26, clearcoat: 0.82, clearcoatRoughness: 0.12, map: mint, envMapIntensity: this.envIntensity }), position: [2.3, -0.8, 1.02] },
-      { material: new THREE.MeshPhysicalMaterial({ color: 0x302728, roughness: 0.2, metalness: 0.04, envMapIntensity: this.envIntensity }), position: [3.1, -0.74, 0.88] },
+    const descriptors = [
+      ...layoutRow(
+        [
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xf7f8fb, roughness: 0.05, metalness: 1, envMapIntensity: this.envIntensity }), shape: "capsule" },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x0b1116, roughness: 0.04, transmission: 0.94, thickness: 1.1, ior: 1.22, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x5879d0, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xdbe8ff, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xb3a998, roughness: 0.14, metalness: 1, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xe3d7bc, roughness: 0.16, metalness: 1, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xf2e6ce, roughness: 0.22, transmission: 0.88, thickness: 1.2, ior: 1.28, attenuationColor: new THREE.Color(0xffecb8), attenuationDistance: 0.75, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x0d1016, roughness: 0.12, metalness: 1, envMapIntensity: this.envIntensity }), shape: "capsule" },
+        ],
+        -2.34,
+        xPositions,
+      ),
+      ...layoutRow(
+        [
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xf7f8fb, roughness: 0.52, metalness: 0.02, map: zebra, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xf8f8ff, roughness: 0.28, metalness: 0.02, map: swirlBlue, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xf2dfc7, roughness: 0.44, metalness: 0.02, map: wood, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xe9efff, roughness: 0.1, transmission: 0.92, thickness: 1.0, ior: 1.25, attenuationColor: new THREE.Color(0xcfe2ff), attenuationDistance: 0.7, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x171626, roughness: 0.24, metalness: 0.04, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x5a7ec8, roughness: 0.26, clearcoat: 0.94, clearcoatRoughness: 0.06, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x0b2018, roughness: 0.34, clearcoat: 0.35, metalness: 0.06, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xaad0cb, roughness: 0.42, clearcoat: 0.72, clearcoatRoughness: 0.18, envMapIntensity: this.envIntensity }) },
+        ],
+        -1.02,
+        xPositions,
+      ),
+      ...layoutRow(
+        [
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xd7d8d4, roughness: 0.68, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xe7dcc0, roughness: 0.38, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xce7678, roughness: 0.46, clearcoat: 0.88, clearcoatRoughness: 0.14, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x0f1116, roughness: 0.18, transmission: 0.42, thickness: 1.2, ior: 1.46, attenuationColor: new THREE.Color(0x0d0f14), attenuationDistance: 0.25, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x14284a, roughness: 0.16, sheen: 0.8, sheenColor: new THREE.Color(0xcfe0ff), sheenRoughness: 0.34, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x28211d, roughness: 0.22, metalness: 0.08, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x212636, roughness: 0.16, metalness: 0.02, iridescence: 1, iridescenceIOR: 1.23, iridescenceThicknessRange: [120, 420], envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xeef2ff, roughness: 0.18, transmission: 0.96, thickness: 1.5, ior: 1.28, attenuationColor: new THREE.Color(0xd4dfff), attenuationDistance: 0.68, envMapIntensity: this.envIntensity }) },
+        ],
+        0.3,
+        xPositions,
+      ),
+      ...layoutRow(
+        [
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xf2f3f7, roughness: 0.18, metalness: 0.02, map: checker, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x1b2a1b, roughness: 0.22, metalness: 0.06, clearcoat: 0.22, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xe1f0d2, roughness: 0.26, clearcoat: 0.82, clearcoatRoughness: 0.12, map: mint, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0x302728, roughness: 0.2, metalness: 0.04, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xd6e4ff, roughness: 0.32, clearcoat: 0.8, clearcoatRoughness: 0.09, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xbfceb4, roughness: 0.34, clearcoat: 0.62, clearcoatRoughness: 0.14, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xe8ddc9, roughness: 0.24, metalness: 0.04, envMapIntensity: this.envIntensity }) },
+          { material: new THREE.MeshPhysicalMaterial({ color: 0xbad5b8, roughness: 0.28, clearcoat: 0.78, clearcoatRoughness: 0.12, envMapIntensity: this.envIntensity }), shape: "capsule" },
+        ],
+        1.62,
+        xPositions,
+      ),
     ];
 
     descriptors.forEach((descriptor) => {
@@ -243,48 +258,29 @@ export class PbrLookdevBoardDemo extends BaseDemo {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.rotation.z = descriptor.shape === "capsule" ? Math.PI / 2 : 0;
-
-      const base = new THREE.Mesh(
-        baseGeometry,
-        new THREE.MeshStandardMaterial({
-          color: 0xdfd5c8,
-          roughness: 0.76,
-          metalness: 0.02,
-        }),
-      );
-      base.position.set(descriptor.position[0], descriptor.position[1] - (descriptor.shape === "capsule" ? 0.48 : 0.46), descriptor.position[2]);
-      base.receiveShadow = true;
-
-      this.assets.push({ mesh, base, material: descriptor.material });
-      this.board.add(mesh, base);
+      this.assets.push({ mesh, material: descriptor.material });
+      this.board.add(mesh);
     });
 
-    this.board.rotation.x = -0.16;
+    this.board.rotation.x = -0.04;
     this.scene.add(new THREE.AmbientLight(0xe7e7ff, 0.14));
 
-    this.key.position.set(4.6, 4.8, 3.8);
+    this.key.position.set(4.8, 4.8, 3.9);
     this.key.castShadow = true;
     this.key.shadow.mapSize.set(1024, 1024);
     this.key.shadow.bias = -0.00035;
-    this.fill.position.set(-4.2, 2.2, 1.8);
-    this.rim.position.set(-1.8, 2.9, -4.2);
-    this.accent.position.set(2.8, 1.4, 1.4);
+    this.fill.position.set(-4.4, 2.3, 2.2);
+    this.rim.position.set(-2.0, 3.0, -4.5);
+    this.accent.position.set(3.2, 1.45, 1.7);
     this.scene.add(this.key, this.fill, this.rim, this.accent);
 
-    this.controls.autoRotateSpeed = 0.34;
-    setCameraPreset(this.camera, this.controls, "orbit");
+    this.camera.position.set(6.75, 2.28, 8.35);
+    this.controls.target.set(0, -0.52, -0.2);
 
     this.bindCheckbox("pbr-wireframe", (value) => {
       for (const asset of this.assets) {
         asset.material.wireframe = value;
       }
-    });
-    this.bindSelect("pbr-camera", (value) => {
-      const allowed: CameraPreset[] = ["orbit", "front", "hero"];
-      setCameraPreset(this.camera, this.controls, allowed.includes(value as CameraPreset) ? (value as CameraPreset) : "orbit");
-    });
-    this.bindCheckbox("pbr-auto-rotate", (value) => {
-      this.setAutoRotate(value);
     });
     this.bindSelect("pbr-theme", (value) => {
       const allowed: ThemeName[] = ["dark", "light", "warm"];
@@ -321,13 +317,13 @@ export class PbrLookdevBoardDemo extends BaseDemo {
   }
 
   protected update(_delta: number, elapsed: number): void {
-    this.board.rotation.y = Math.sin(elapsed * 0.18) * 0.12;
-    this.accent.position.x = 2.8 + Math.cos(elapsed * 0.5) * 0.35;
-    this.key.position.z = 3.8 + Math.sin(elapsed * 0.38) * 0.28;
+    this.board.rotation.y = Math.sin(elapsed * 0.18) * 0.08;
+    this.accent.position.x = 3.2 + Math.cos(elapsed * 0.5) * 0.35;
+    this.key.position.z = 3.9 + Math.sin(elapsed * 0.38) * 0.28;
 
     for (let index = 0; index < this.assets.length; index += 1) {
       const asset = this.assets[index];
-      asset.mesh.rotation.y = elapsed * (0.09 + (index % 5) * 0.012);
+      asset.mesh.rotation.y = elapsed * (0.08 + (index % 6) * 0.01);
     }
   }
 

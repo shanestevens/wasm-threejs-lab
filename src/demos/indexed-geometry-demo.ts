@@ -66,9 +66,6 @@ export class IndexedGeometryDemo extends BaseDemo {
     this.bindCheckbox("indexed-wireframe", (value) => {
       this.wireframe.visible = value;
     });
-    this.bindCheckbox("indexed-auto-rotate", (value) => {
-      this.setAutoRotate(value);
-    });
     this.bindRange("indexed-profile", (value) => {
       this.profile = value;
       this.refreshGeometry();

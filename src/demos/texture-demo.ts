@@ -101,9 +101,6 @@ export class TextureDemo extends BaseDemo {
       this.torusWireframe.visible = value;
       this.boxWireframe.visible = value;
     });
-    this.bindCheckbox("texture-auto-rotate", (value) => {
-      this.setAutoRotate(value);
-    });
     this.bindRange("texture-speed", (value) => {
       this.speed = value;
     }, (value) => `${value.toFixed(1)}x`);

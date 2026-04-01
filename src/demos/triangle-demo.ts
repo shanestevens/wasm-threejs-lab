@@ -49,8 +49,7 @@ export class TriangleDemo extends BaseDemo {
     this.scene.add(this.group);
 
     this.camera.position.set(0.04, 0.1, 2.5);
-    this.controls.enableZoom = false;
-    this.controls.autoRotate = false;
+    this.setOrbitZoomEnabled(false);
 
     this.bindCheckbox("triangle-wireframe", (value) => {
       this.mesh.material.wireframe = value;

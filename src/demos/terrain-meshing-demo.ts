@@ -248,6 +248,15 @@ function buildTerrainObjects(
 }
 
 function getBenchmarkSteps(resolution: number): number {
+  if (resolution >= 320) {
+    return 2;
+  }
+  if (resolution >= 256) {
+    return 4;
+  }
+  if (resolution >= 192) {
+    return 6;
+  }
   if (resolution >= 160) {
     return 8;
   }
@@ -393,9 +402,6 @@ export class TerrainMeshingDemo extends BaseDemo {
         this.driver = "cpp";
       }
       this.rebuildMesh();
-    });
-    this.bindCheckbox("terrain-auto-rotate", (value) => {
-      this.setAutoRotate(value);
     });
     this.bindCheckbox("terrain-wireframe", (value) => {
       this.mesh.material.wireframe = value;

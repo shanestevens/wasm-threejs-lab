@@ -493,9 +493,6 @@ export class ShaderFxBenchDemo extends BaseDemo {
     this.controls.target.set(0, -0.06, -0.1);
     this.controls.autoRotateSpeed = 0.56;
 
-    this.bindCheckbox("shader-auto-rotate", (value) => {
-      this.setAutoRotate(value);
-    });
     this.bindSelect("shader-focus", (value) => {
       const allowed: EffectKey[] = ["all", "hologram", "lava", "contour", "aurora"];
       this.focus = allowed.includes(value as EffectKey) ? (value as EffectKey) : "all";

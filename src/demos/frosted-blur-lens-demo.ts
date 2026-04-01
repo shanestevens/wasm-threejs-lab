@@ -280,13 +280,6 @@ export class FrostedBlurLensDemo extends BaseDemo {
       this.lensMaterial.wireframe = value;
       this.slabMaterial.wireframe = value;
     });
-    this.bindSelect("frost-camera", (value) => {
-      const allowed: CameraPreset[] = ["orbit", "front", "hero"];
-      setCameraPreset(this.camera, this.controls, allowed.includes(value as CameraPreset) ? (value as CameraPreset) : "orbit");
-    });
-    this.bindCheckbox("frost-auto-rotate", (value) => {
-      this.setAutoRotate(value);
-    });
     this.bindRange("frost-roughness", (value) => {
       this.roughness = value;
       this.applyMaterialState();

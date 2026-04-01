@@ -154,9 +154,6 @@ export class ShadowPlaygroundDemo extends BaseDemo {
 
     this.blurOutput = requireElement(root, '[data-output="shadow-blur"]');
 
-    this.bindCheckbox("shadow-auto-rotate", (value) => {
-      this.setAutoRotate(value);
-    });
     this.bindCheckbox("shadow-helpers", (value) => {
       this.helperGroup.visible = value;
     });

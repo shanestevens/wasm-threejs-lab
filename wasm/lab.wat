@@ -1,5 +1,5 @@
 (module
-  (memory (export "memory") 112)
+  (memory (export "memory") 256)
 
   (func $abs_i32 (param $value i32) (result i32)
     (if (result i32)

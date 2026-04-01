@@ -9,7 +9,7 @@ import { ShadowPlaygroundDemo } from "./demos/shadow-playground-demo";
 import { TerrainMeshingDemo } from "./demos/terrain-meshing-demo";
 import { TextureDemo } from "./demos/texture-demo";
 import { TriangleDemo } from "./demos/triangle-demo";
-import { loadLabWasm, loadTerrainCppWasm } from "./lib/load-wasm";
+import { TERRAIN_MAX_RESOLUTION, loadLabWasm, loadTerrainCppWasm } from "./lib/load-wasm";
 
 type DemoConfig = {
   id: string;
@@ -20,6 +20,18 @@ type DemoConfig = {
   controls: string;
   tags: string[];
 };
+
+function renderCameraModeRow(): string {
+  return `
+    <label class="control-row">
+      <span>camera</span>
+      <select data-control="camera-mode">
+        <option value="orbit" selected>Orbit</option>
+        <option value="fps">FPS</option>
+      </select>
+    </label>
+  `;
+}
 
 const demos: DemoConfig[] = [
   {
@@ -34,6 +46,7 @@ const demos: DemoConfig[] = [
         <summary>Debug</summary>
         <div class="control-group">
           <h3>View</h3>
+          ${renderCameraModeRow()}
           <label class="control-row">
             <span>wireframe</span>
             <input type="checkbox" data-control="triangle-wireframe" />
@@ -72,13 +85,10 @@ const demos: DemoConfig[] = [
         <summary>Debug</summary>
         <div class="control-group">
           <h3>View</h3>
+          ${renderCameraModeRow()}
           <label class="control-row">
             <span>wireframe</span>
             <input type="checkbox" data-control="indexed-wireframe" />
-          </label>
-          <label class="control-row">
-            <span>auto rotate</span>
-            <input type="checkbox" checked data-control="indexed-auto-rotate" />
           </label>
         </div>
         <div class="control-group">
@@ -104,13 +114,10 @@ const demos: DemoConfig[] = [
         <summary>Debug</summary>
         <div class="control-group">
           <h3>View</h3>
+          ${renderCameraModeRow()}
           <label class="control-row">
             <span>wireframe</span>
             <input type="checkbox" data-control="texture-wireframe" />
-          </label>
-          <label class="control-row">
-            <span>auto rotate</span>
-            <input type="checkbox" checked data-control="texture-auto-rotate" />
           </label>
           <label class="control-row">
             <span>filter</span>
@@ -143,13 +150,10 @@ const demos: DemoConfig[] = [
         <summary>Debug</summary>
         <div class="control-group">
           <h3>View</h3>
+          ${renderCameraModeRow()}
           <label class="control-row">
             <span>wireframe</span>
             <input type="checkbox" data-control="lighting-wireframe" />
-          </label>
-          <label class="control-row">
-            <span>auto rotate</span>
-            <input type="checkbox" checked data-control="lighting-auto-rotate" />
           </label>
         </div>
         <div class="control-group">
@@ -210,13 +214,10 @@ const demos: DemoConfig[] = [
         <summary>Debug</summary>
         <div class="control-group">
           <h3>View</h3>
+          ${renderCameraModeRow()}
           <label class="control-row">
             <span>wireframe</span>
             <input type="checkbox" data-control="shadow-wireframe" />
-          </label>
-          <label class="control-row">
-            <span>auto rotate</span>
-            <input type="checkbox" checked data-control="shadow-auto-rotate" />
           </label>
           <label class="control-row">
             <span>helpers</span>
@@ -259,10 +260,7 @@ const demos: DemoConfig[] = [
         <summary>Debug</summary>
         <div class="control-group">
           <h3>View</h3>
-          <label class="control-row">
-            <span>auto rotate</span>
-            <input type="checkbox" checked data-control="shader-auto-rotate" />
-          </label>
+          ${renderCameraModeRow()}
           <label class="control-row">
             <span>focus</span>
             <select data-control="shader-focus">
@@ -477,21 +475,10 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
             <summary>Debug</summary>
             <div class="control-group">
               <h3>View</h3>
+              ${renderCameraModeRow()}
               <label class="control-row">
                 <span>wireframe</span>
                 <input type="checkbox" data-control="pbr-wireframe" />
-              </label>
-              <label class="control-row">
-                <span>camera</span>
-                <select data-control="pbr-camera">
-                  <option value="orbit" selected>Orbit</option>
-                  <option value="front">Front</option>
-                  <option value="hero">Hero</option>
-                </select>
-              </label>
-              <label class="control-row">
-                <span>auto rotate</span>
-                <input type="checkbox" checked data-control="pbr-auto-rotate" />
               </label>
             </div>
             <div class="control-group">
@@ -574,21 +561,10 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
             <summary>Debug</summary>
             <div class="control-group">
               <h3>View</h3>
+              ${renderCameraModeRow()}
               <label class="control-row">
                 <span>wireframe</span>
                 <input type="checkbox" data-control="frost-wireframe" />
-              </label>
-              <label class="control-row">
-                <span>camera</span>
-                <select data-control="frost-camera">
-                  <option value="orbit" selected>Orbit</option>
-                  <option value="front">Front</option>
-                  <option value="hero">Hero</option>
-                </select>
-              </label>
-              <label class="control-row">
-                <span>auto rotate</span>
-                <input type="checkbox" checked data-control="frost-auto-rotate" />
               </label>
             </div>
             <div class="control-group">
@@ -677,6 +653,14 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
           <details class="debug-panel" open>
             <summary>Debug</summary>
             <div class="control-group">
+              <h3>View</h3>
+              ${renderCameraModeRow()}
+              <label class="control-row">
+                <span>wireframe</span>
+                <input type="checkbox" data-control="terrain-wireframe" />
+              </label>
+            </div>
+            <div class="control-group">
               <h3>Driver</h3>
               <label class="control-row">
                 <span>mode</span>
@@ -687,16 +671,8 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
                 </select>
               </label>
               <label class="control-row">
-                <span>wireframe</span>
-                <input type="checkbox" data-control="terrain-wireframe" />
-              </label>
-              <label class="control-row">
-                <span>auto rotate</span>
-                <input type="checkbox" checked data-control="terrain-auto-rotate" />
-              </label>
-              <label class="control-row">
                 <span>resolution</span>
-                <input type="range" min="48" max="192" step="16" value="128" data-control="terrain-resolution" />
+                <input type="range" min="48" max="${TERRAIN_MAX_RESOLUTION}" step="16" value="128" data-control="terrain-resolution" />
                 <output>128</output>
               </label>
             </div>

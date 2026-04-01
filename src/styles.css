@@ -520,6 +520,35 @@ output {
   min-height: 520px;
 }
 
+.pbr-showcase {
+  margin-top: 84px;
+}
+
+.pbr-showcase__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.26fr) minmax(320px, 0.42fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.pbr-showcase__viewer .demo-card__stage {
+  min-height: 720px;
+}
+
+.pbr-showcase__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.demo-card[data-demo="shaderfx"] {
+  grid-column: span 2;
+}
+
+.demo-card[data-demo="shaderfx"] .demo-card__stage {
+  min-height: 452px;
+}
+
 .demo-card:fullscreen {
   max-width: none;
   width: 100%;
@@ -572,6 +601,10 @@ output {
   .swarm-lab__grid {
     grid-template-columns: 1fr;
   }
+
+  .pbr-showcase__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -606,6 +639,10 @@ output {
 
   .swarm-lab {
     padding: 16px;
+  }
+
+  .demo-card[data-demo="shaderfx"] {
+    grid-column: span 1;
   }
 
   .demo-card__lede {

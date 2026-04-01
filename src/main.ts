@@ -2,6 +2,9 @@ import "./styles.css";
 
 import { IndexedGeometryDemo } from "./demos/indexed-geometry-demo";
 import { LightingStudioDemo } from "./demos/lighting-studio-demo";
+import { PbrLookdevBoardDemo } from "./demos/pbr-lookdev-board-demo";
+import { ShaderFxBenchDemo } from "./demos/shader-fx-bench-demo";
+import { ShadowPlaygroundDemo } from "./demos/shadow-playground-demo";
 import { TerrainMeshingDemo } from "./demos/terrain-meshing-demo";
 import { TextureDemo } from "./demos/texture-demo";
 import { TriangleDemo } from "./demos/triangle-demo";
@@ -194,6 +197,108 @@ const demos: DemoConfig[] = [
       </details>
     `,
   },
+  {
+    id: "shadow",
+    step: "Step 04B",
+    title: "Shadow Playground",
+    lede: "Compare shadow casters, helper frusta, shadow map modes, and bias tuning in one controllable scene.",
+    note: "This card is intentionally renderer-side. No new WASM needed here: once your scene data exists, this is pure Three.js light and shadow debugging work.",
+    tags: ["Shadow maps", "Bias", "Helpers"],
+    controls: `
+      <details class="debug-panel" open>
+        <summary>Debug</summary>
+        <div class="control-group">
+          <h3>View</h3>
+          <label class="control-row">
+            <span>wireframe</span>
+            <input type="checkbox" data-control="shadow-wireframe" />
+          </label>
+          <label class="control-row">
+            <span>auto rotate</span>
+            <input type="checkbox" checked data-control="shadow-auto-rotate" />
+          </label>
+          <label class="control-row">
+            <span>helpers</span>
+            <input type="checkbox" data-control="shadow-helpers" />
+          </label>
+        </div>
+        <div class="control-group">
+          <h3>Shadow</h3>
+          <label class="control-row">
+            <span>map type</span>
+            <select data-control="shadow-type">
+              <option value="pcf" selected>PCF</option>
+              <option value="basic">Basic</option>
+              <option value="vsm">VSM</option>
+            </select>
+          </label>
+          <label class="control-row">
+            <span>bias</span>
+            <input type="range" min="-0.01" max="0.002" step="0.0002" value="-0.0008" data-control="shadow-bias" />
+            <output>-0.0008</output>
+          </label>
+          <label class="control-row">
+            <span>blur</span>
+            <input type="range" min="0" max="8" step="0.5" value="3" data-control="shadow-blur" />
+            <output data-output="shadow-blur">3.0</output>
+          </label>
+        </div>
+      </details>
+    `,
+  },
+  {
+    id: "shaderfx",
+    step: "Step 04D",
+    title: "Shader FX Bench",
+    lede: "Stage neon hologram, molten core, contour x-ray, and aurora-shell looks under one camera so custom shader surfaces feel like a real FX lab, not a flat material swap.",
+    note: "This is where GLSL takes over. JavaScript still drives time and control values, but the actual look now lives in the shader: fresnel shells, scanlines, warped normals, additive glows, and procedural bands.",
+    tags: ["ShaderMaterial", "Additive shells", "Procedural FX"],
+    controls: `
+      <details class="debug-panel" open>
+        <summary>Debug</summary>
+        <div class="control-group">
+          <h3>View</h3>
+          <label class="control-row">
+            <span>auto rotate</span>
+            <input type="checkbox" checked data-control="shader-auto-rotate" />
+          </label>
+          <label class="control-row">
+            <span>focus</span>
+            <select data-control="shader-focus">
+              <option value="all" selected>All effects</option>
+              <option value="hologram">Hologram</option>
+              <option value="lava">Molten core</option>
+              <option value="contour">Contour x-ray</option>
+              <option value="aurora">Aurora shell</option>
+            </select>
+          </label>
+        </div>
+        <div class="control-group">
+          <h3>Shader</h3>
+          <label class="control-row">
+            <span>pulse</span>
+            <input type="range" min="0.2" max="2.4" step="0.05" value="1.1" data-control="shader-pulse" />
+            <output>1.10x</output>
+          </label>
+          <label class="control-row">
+            <span>distortion</span>
+            <input type="range" min="0" max="1.2" step="0.05" value="0.35" data-control="shader-distortion" />
+            <output>0.35</output>
+          </label>
+          <label class="control-row">
+            <span>rim</span>
+            <input type="range" min="0.2" max="2.4" step="0.05" value="1.35" data-control="shader-rim" />
+            <output>1.35</output>
+          </label>
+          <label class="control-row">
+            <span>glow</span>
+            <input type="range" min="0.4" max="2.6" step="0.05" value="1.25" data-control="shader-glow" />
+            <output>1.25</output>
+          </label>
+        </div>
+      </details>
+    `,
+  },
 ];
 
 function renderDemoCard(demo: DemoConfig): string {
@@ -239,6 +344,9 @@ app.innerHTML = `
           <span>Indexed mesh buffers</span>
           <span>Texture bytes</span>
           <span>Lighting state</span>
+          <span>Shadow rigs</span>
+          <span>PBR lookdev</span>
+          <span>Shader FX</span>
         </div>
       </div>
       <aside class="hero__snippet">
@@ -336,10 +444,107 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
     <section class="demos">
       <div class="section-heading">
         <p class="section-heading__eyebrow">Interactive demos</p>
-        <h2>Four ways to connect WASM to a Three.js scene</h2>
+        <h2>Core demos and renderer-side follow-ups</h2>
       </div>
       <div class="demo-grid">
         ${demos.map(renderDemoCard).join("")}
+      </div>
+    </section>
+
+    <section class="pbr-showcase swarm-lab" data-demo="pbrlab">
+      <div class="swarm-lab__top">
+        <span class="demo-card__step">Step 04C</span>
+        <button class="demo-card__fullscreen" type="button" data-action="fullscreen">Full screen</button>
+      </div>
+      <div class="section-heading section-heading--compact">
+        <p class="section-heading__eyebrow">PBR Lab</p>
+        <h2>PBR Lookdev Board</h2>
+      </div>
+      <p class="swarm-lab__lede">
+        Lay out a full material-ball board so roughness, metalness, transmission, clearcoat, and shader-authored surfaces can be compared under one studio rig.
+      </p>
+      <div class="pbr-showcase__grid">
+        <div class="pbr-showcase__viewer">
+          <div class="demo-card__stage">
+            <canvas aria-label="PBR lookdev board demo"></canvas>
+            <span class="demo-card__fps">0 FPS</span>
+          </div>
+        </div>
+        <div class="pbr-showcase__sidebar">
+          <details class="debug-panel" open>
+            <summary>Debug</summary>
+            <div class="control-group">
+              <h3>View</h3>
+              <label class="control-row">
+                <span>wireframe</span>
+                <input type="checkbox" data-control="pbr-wireframe" />
+              </label>
+              <label class="control-row">
+                <span>camera</span>
+                <select data-control="pbr-camera">
+                  <option value="orbit" selected>Orbit</option>
+                  <option value="front">Front</option>
+                  <option value="hero">Hero</option>
+                </select>
+              </label>
+              <label class="control-row">
+                <span>auto rotate</span>
+                <input type="checkbox" checked data-control="pbr-auto-rotate" />
+              </label>
+            </div>
+            <div class="control-group">
+              <h3>PBR lab</h3>
+              <label class="control-row">
+                <span>theme</span>
+                <select data-control="pbr-theme">
+                  <option value="dark" selected>Dark</option>
+                  <option value="light">Light</option>
+                  <option value="warm">Warm</option>
+                </select>
+              </label>
+              <label class="control-row">
+                <span>env intensity</span>
+                <input type="range" min="0.2" max="1.6" step="0.02" value="0.62" data-control="pbr-env" />
+                <output>0.62</output>
+              </label>
+              <label class="control-row">
+                <span>exposure</span>
+                <input type="range" min="0.55" max="1.4" step="0.01" value="0.95" data-control="pbr-exposure" />
+                <output>0.95</output>
+              </label>
+              <label class="control-row">
+                <span>key</span>
+                <input type="range" min="0.4" max="2.4" step="0.02" value="1.18" data-control="pbr-key" />
+                <output>1.18</output>
+              </label>
+              <label class="control-row">
+                <span>fill</span>
+                <input type="range" min="0" max="1.2" step="0.02" value="0.10" data-control="pbr-fill" />
+                <output>0.10</output>
+              </label>
+              <label class="control-row">
+                <span>rim</span>
+                <input type="range" min="0" max="1.4" step="0.02" value="0.62" data-control="pbr-rim" />
+                <output>0.62</output>
+              </label>
+              <label class="control-row">
+                <span>accent</span>
+                <input type="range" min="0" max="2" step="0.02" value="0.80" data-control="pbr-accent" />
+                <output>0.80</output>
+              </label>
+            </div>
+          </details>
+          <p class="demo-card__note">
+            This is the kind of scene you use to judge whether a material is actually good. The board sweeps dielectrics, metals, clearcoat,
+            transmission, and more stylized surfaces while sharing the same environment, exposure, and lights.
+          </p>
+          <div class="demo-card__tags">
+            <span class="demo-card__tag">MeshPhysicalMaterial</span>
+            <span class="demo-card__tag">PMREM</span>
+            <span class="demo-card__tag">Lookdev board</span>
+            <span class="demo-card__tag">Studio rig</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -471,6 +676,9 @@ try {
     new IndexedGeometryDemo(document.querySelector<HTMLElement>('[data-demo="indexed"]')!, wasm),
     new TextureDemo(document.querySelector<HTMLElement>('[data-demo="texture"]')!, wasm),
     new LightingStudioDemo(document.querySelector<HTMLElement>('[data-demo="lighting"]')!, wasm),
+    new ShadowPlaygroundDemo(document.querySelector<HTMLElement>('[data-demo="shadow"]')!),
+    new PbrLookdevBoardDemo(document.querySelector<HTMLElement>('[data-demo="pbrlab"]')!),
+    new ShaderFxBenchDemo(document.querySelector<HTMLElement>('[data-demo="shaderfx"]')!),
     new TerrainMeshingDemo(document.querySelector<HTMLElement>('[data-demo="terrain"]')!, wasm, terrainCppWasm),
   ];
 

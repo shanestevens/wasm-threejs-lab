@@ -1,4 +1,8 @@
 export const TEXTURE_SIZE = 128;
+export const SWARM_MAX_ENTITIES = 40000;
+export const TERRAIN_MAX_RESOLUTION = 192;
+export const TERRAIN_MAX_VERTICES = (TERRAIN_MAX_RESOLUTION + 1) * (TERRAIN_MAX_RESOLUTION + 1);
+export const TERRAIN_MAX_INDICES = TERRAIN_MAX_RESOLUTION * TERRAIN_MAX_RESOLUTION * 6;
 
 export const WASM_LAYOUT = {
   trianglePositions: 0,
@@ -8,6 +12,14 @@ export const WASM_LAYOUT = {
   geometryIndices: 12_288,
   texturePixels: 16_384,
   lightingState: 90_112,
+  swarmState: 98_304,
+  swarmGridHeads: 1_441_792,
+  swarmGridNext: 1_458_176,
+  swarmMatrices: 1_638_400,
+  terrainPositions: 4_198_656,
+  terrainNormals: 4_645_888,
+  terrainColors: 5_093_120,
+  terrainIndices: 5_540_352,
 } as const;
 
 export interface LabWasmExports extends WebAssembly.Exports {
@@ -16,6 +28,41 @@ export interface LabWasmExports extends WebAssembly.Exports {
   fill_indexed_cube(positionPtr: number, colorPtr: number, indexPtr: number, profile: number): void;
   fill_texture(pixelPtr: number, width: number, height: number, tick: number): void;
   fill_lighting_state(statePtr: number, setup: number, phase: number): void;
+  build_terrain_mesh(
+    positionPtr: number,
+    normalPtr: number,
+    colorPtr: number,
+    indexPtr: number,
+    resolution: number,
+    phase: number,
+    amplitude: number,
+    roughness: number,
+  ): void;
+  seed_swarm(statePtr: number, count: number): void;
+  step_swarm(
+    statePtr: number,
+    gridHeadPtr: number,
+    gridNextPtr: number,
+    matrixPtr: number,
+    count: number,
+    dt: number,
+    spread: number,
+    lift: number,
+  ): void;
+}
+
+export interface TerrainCppWasmExports extends WebAssembly.Exports {
+  memory: WebAssembly.Memory;
+  build_terrain_mesh(
+    positionPtr: number,
+    normalPtr: number,
+    colorPtr: number,
+    indexPtr: number,
+    resolution: number,
+    phase: number,
+    amplitude: number,
+    roughness: number,
+  ): void;
 }
 
 async function instantiateModule(url: string): Promise<WebAssembly.Instance> {
@@ -47,4 +94,10 @@ export async function loadLabWasm(): Promise<LabWasmExports> {
   const wasmUrl = new URL(`${import.meta.env.BASE_URL}wasm/lab.wasm`, window.location.origin);
   const instance = await instantiateModule(wasmUrl.toString());
   return instance.exports as unknown as LabWasmExports;
+}
+
+export async function loadTerrainCppWasm(): Promise<TerrainCppWasmExports> {
+  const wasmUrl = new URL(`${import.meta.env.BASE_URL}wasm/terrain-cpp.wasm`, window.location.origin);
+  const instance = await instantiateModule(wasmUrl.toString());
+  return instance.exports as unknown as TerrainCppWasmExports;
 }

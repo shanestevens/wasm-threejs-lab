@@ -68,7 +68,9 @@ output {
 .principles__grid article,
 .inspect__grid article,
 .pipeline__steps article,
-.demo-card {
+.demo-card,
+.swarm-lab,
+.swarm-metric {
   border: 1px solid var(--line);
   background:
     linear-gradient(180deg, rgba(14, 23, 41, 0.94), rgba(8, 13, 24, 0.92)),
@@ -211,6 +213,11 @@ output {
 .section-heading {
   margin-top: 84px;
   margin-bottom: 22px;
+}
+
+.section-heading--compact {
+  margin-top: 0;
+  margin-bottom: 18px;
 }
 
 .section-heading h2 {
@@ -424,7 +431,108 @@ output {
   color: #dcecff;
 }
 
+.swarm-section {
+  margin-top: 84px;
+}
+
+.swarm-lab {
+  padding: 24px;
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.swarm-lab__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.swarm-lab__grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.swarm-lab__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.swarm-lab__lede,
+.swarm-lab__note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.swarm-lab__note {
+  white-space: pre-line;
+}
+
+.swarm-lab__button {
+  width: fit-content;
+  border: 1px solid rgba(101, 166, 255, 0.26);
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, rgba(10, 30, 54, 0.96), rgba(7, 18, 34, 0.96));
+  color: var(--text);
+  cursor: pointer;
+}
+
+.swarm-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.swarm-metric {
+  min-height: 112px;
+  padding: 18px;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.swarm-metric span {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.swarm-metric strong {
+  font-family: "Sora", sans-serif;
+  font-size: 1.3rem;
+  line-height: 1.15;
+}
+
+.swarm-lab__viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.swarm-lab .demo-card__stage {
+  min-height: 520px;
+}
+
 .demo-card:fullscreen {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  padding: 32px;
+  border-radius: 0;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(16, 42, 88, 0.42), transparent 26%),
+    linear-gradient(180deg, rgba(7, 12, 23, 0.98), rgba(4, 8, 16, 0.98));
+}
+
+.swarm-lab:fullscreen {
   max-width: none;
   width: 100%;
   height: 100%;
@@ -440,6 +548,10 @@ output {
   min-height: min(72vh, 860px);
 }
 
+.swarm-lab:fullscreen .demo-card__stage {
+  min-height: min(72vh, 860px);
+}
+
 .inspect {
   padding-bottom: 40px;
 }
@@ -452,8 +564,13 @@ output {
   .info-grid,
   .principles__grid,
   .inspect__grid,
-  .pipeline__steps {
+  .pipeline__steps,
+  .swarm-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .swarm-lab__grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -478,11 +595,16 @@ output {
   .info-grid,
   .principles__grid,
   .inspect__grid,
-  .pipeline__steps {
+  .pipeline__steps,
+  .swarm-metrics {
     grid-template-columns: 1fr;
   }
 
   .demo-card {
+    padding: 16px;
+  }
+
+  .swarm-lab {
     padding: 16px;
   }
 

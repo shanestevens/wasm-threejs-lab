@@ -2,9 +2,10 @@ import "./styles.css";
 
 import { IndexedGeometryDemo } from "./demos/indexed-geometry-demo";
 import { LightingStudioDemo } from "./demos/lighting-studio-demo";
+import { TerrainMeshingDemo } from "./demos/terrain-meshing-demo";
 import { TextureDemo } from "./demos/texture-demo";
 import { TriangleDemo } from "./demos/triangle-demo";
-import { loadLabWasm } from "./lib/load-wasm";
+import { loadLabWasm, loadTerrainCppWasm } from "./lib/load-wasm";
 
 type DemoConfig = {
   id: string;
@@ -297,7 +298,7 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
         <article>
           <span>03</span>
           <h3>Instantiate</h3>
-          <p>Exports become callable functions, and the module’s linear memory becomes an <code>ArrayBuffer</code> that JS can view with typed arrays.</p>
+          <p>Exports become callable functions, and the module's linear memory becomes an <code>ArrayBuffer</code> that JS can view with typed arrays.</p>
         </article>
         <article>
           <span>04</span>
@@ -342,6 +343,96 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
       </div>
     </section>
 
+    <section class="swarm-section swarm-lab" data-demo="terrain">
+      <div class="swarm-lab__top">
+        <span class="demo-card__step">Benchmark</span>
+        <button class="demo-card__fullscreen" type="button" data-action="fullscreen">Full screen</button>
+      </div>
+      <div class="section-heading section-heading--compact">
+        <p class="section-heading__eyebrow">Engine-style example</p>
+        <h2>Terrain chunk meshing: one preview, three builders</h2>
+      </div>
+      <div class="swarm-lab__grid">
+        <div class="swarm-lab__copy">
+          <p class="swarm-lab__lede">
+            This is much closer to real engine-side C++ work: take a scalar field, generate packed vertex, normal, color, and index buffers,
+            then hand those buffers to one shared Three.js mesh. The renderer stays exactly the same while the builder changes underneath it.
+          </p>
+          <div class="swarm-metrics">
+            <article class="swarm-metric">
+              <span>Active driver</span>
+              <strong data-terrain-driver>WASM C++</strong>
+            </article>
+            <article class="swarm-metric">
+              <span>Resolution</span>
+              <strong data-terrain-resolution>128 x 128</strong>
+            </article>
+            <article class="swarm-metric">
+              <span>Live build</span>
+              <strong data-terrain-live>0.00 ms / build</strong>
+            </article>
+          </div>
+          <p class="swarm-lab__note" data-terrain-compare>
+            Run compare to benchmark only the chunk builder. The preview render path stays shared across all modes.
+            The live toggle lets you switch between JS typed arrays, handwritten WAT, and a real compiled C++ WASM kernel.
+            The compare sweep also includes a JS-object baseline so you can see where object-heavy code falls away first.
+          </p>
+          <button class="swarm-lab__button" type="button" data-action="terrain-compare">Compare JS vs WASM</button>
+        </div>
+        <div class="swarm-lab__viewer">
+          <div class="demo-card__stage">
+            <canvas aria-label="Terrain chunk benchmark demo"></canvas>
+            <span class="demo-card__fps">0 FPS</span>
+          </div>
+          <details class="debug-panel" open>
+            <summary>Debug</summary>
+            <div class="control-group">
+              <h3>Driver</h3>
+              <label class="control-row">
+                <span>mode</span>
+                <select data-control="terrain-driver">
+                  <option value="cpp" selected>WASM C++</option>
+                  <option value="wat">WASM WAT</option>
+                  <option value="js">JS typed</option>
+                </select>
+              </label>
+              <label class="control-row">
+                <span>wireframe</span>
+                <input type="checkbox" data-control="terrain-wireframe" />
+              </label>
+              <label class="control-row">
+                <span>auto rotate</span>
+                <input type="checkbox" checked data-control="terrain-auto-rotate" />
+              </label>
+              <label class="control-row">
+                <span>resolution</span>
+                <input type="range" min="48" max="192" step="16" value="128" data-control="terrain-resolution" />
+                <output>128</output>
+              </label>
+            </div>
+            <div class="control-group">
+              <h3>Field</h3>
+              <label class="control-row">
+                <span>phase</span>
+                <input type="range" min="0" max="2" step="0.05" value="0.3" data-control="terrain-phase" />
+                <output>0.30</output>
+              </label>
+              <label class="control-row">
+                <span>amplitude</span>
+                <input type="range" min="0.8" max="2.4" step="0.05" value="1.6" data-control="terrain-amplitude" />
+                <output>1.60</output>
+              </label>
+              <label class="control-row">
+                <span>roughness</span>
+                <input type="range" min="0.2" max="1.2" step="0.05" value="0.75" data-control="terrain-roughness" />
+                <output>0.75</output>
+              </label>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
     <section class="inspect">
       <div class="section-heading">
         <p class="section-heading__eyebrow">DevTools ideas</p>
@@ -368,7 +459,7 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
 const status = app.querySelector<HTMLElement>("[data-load-state]");
 
 try {
-  const wasm = await loadLabWasm();
+  const [wasm, terrainCppWasm] = await Promise.all([loadLabWasm(), loadTerrainCppWasm()]);
 
   status?.setAttribute("data-load-state", "ready");
   if (status) {
@@ -380,6 +471,7 @@ try {
     new IndexedGeometryDemo(document.querySelector<HTMLElement>('[data-demo="indexed"]')!, wasm),
     new TextureDemo(document.querySelector<HTMLElement>('[data-demo="texture"]')!, wasm),
     new LightingStudioDemo(document.querySelector<HTMLElement>('[data-demo="lighting"]')!, wasm),
+    new TerrainMeshingDemo(document.querySelector<HTMLElement>('[data-demo="terrain"]')!, wasm, terrainCppWasm),
   ];
 
   let previous = performance.now();

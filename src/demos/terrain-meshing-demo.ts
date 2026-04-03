@@ -11,6 +11,7 @@ import {
 } from "../lib/load-wasm";
 
 type Driver = "js" | "wat" | "cpp";
+type PreviewMode = "terrain" | "height" | "slope" | "normal";
 
 type TerrainVertex = {
   position: { x: number; y: number; z: number };
@@ -21,6 +22,7 @@ type TerrainVertex = {
 const WORLD_SIZE = 8.4;
 const WORLD_HALF = WORLD_SIZE * 0.5;
 const POSITION_STRIDE = 3;
+const PREVIEW_PALETTE_STEPS = 10;
 
 function requireElement<T extends Element>(root: ParentNode, selector: string): T {
   const element = root.querySelector<T>(selector);
@@ -247,6 +249,59 @@ function buildTerrainObjects(
   return { vertexCount: vertices.length, indexCount: faces.length };
 }
 
+function lerp(start: number, end: number, alpha: number): number {
+  return start + (end - start) * alpha;
+}
+
+function writeColor(
+  buffer: Float32Array,
+  offset: number,
+  red: number,
+  green: number,
+  blue: number,
+): void {
+  buffer[offset] = clamp(red, 0, 1);
+  buffer[offset + 1] = clamp(green, 0, 1);
+  buffer[offset + 2] = clamp(blue, 0, 1);
+}
+
+function writeSlopeColor(buffer: Float32Array, offset: number, slope: number): void {
+  const value = clamp(slope, 0, 1);
+
+  if (value < 0.35) {
+    const blend = value / 0.35;
+    writeColor(
+      buffer,
+      offset,
+      lerp(0.08, 0.18, blend),
+      lerp(0.28, 0.74, blend),
+      lerp(0.58, 0.48, blend),
+    );
+    return;
+  }
+
+  if (value < 0.7) {
+    const blend = (value - 0.35) / 0.35;
+    writeColor(
+      buffer,
+      offset,
+      lerp(0.18, 0.92, blend),
+      lerp(0.74, 0.68, blend),
+      lerp(0.48, 0.24, blend),
+    );
+    return;
+  }
+
+  const blend = (value - 0.7) / 0.3;
+  writeColor(
+    buffer,
+    offset,
+    lerp(0.92, 0.98, blend),
+    lerp(0.68, 0.22, blend),
+    lerp(0.24, 0.2, blend),
+  );
+}
+
 function getBenchmarkSteps(resolution: number): number {
   if (resolution >= 320) {
     return 2;
@@ -269,9 +324,31 @@ function getBenchmarkSteps(resolution: number): number {
   return 20;
 }
 
+function getPatchBenchmarkSteps(resolution: number, chunkCount: number): number {
+  const workload = resolution * resolution * chunkCount;
+
+  if (workload >= 384 * 384 * 25) {
+    return 1;
+  }
+  if (workload >= 320 * 320 * 25) {
+    return 2;
+  }
+  if (workload >= 256 * 256 * 25) {
+    return 3;
+  }
+  if (workload >= 192 * 192 * 25) {
+    return 4;
+  }
+  if (workload >= 160 * 160 * 9) {
+    return 5;
+  }
+  return 6;
+}
+
 export class TerrainMeshingDemo extends BaseDemo {
   private readonly driverOutput: HTMLElement;
   private readonly resolutionOutput: HTMLElement;
+  private readonly trianglesOutput: HTMLElement;
   private readonly liveOutput: HTMLElement;
   private readonly compareOutput: HTMLElement;
   private readonly mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
@@ -298,6 +375,7 @@ export class TerrainMeshingDemo extends BaseDemo {
   private amplitude = 1.6;
   private roughness = 0.75;
   private driver: Driver = "cpp";
+  private previewMode: PreviewMode = "terrain";
   private lastBuildMs = 0;
 
   constructor(
@@ -309,6 +387,7 @@ export class TerrainMeshingDemo extends BaseDemo {
 
     this.driverOutput = requireElement(root, "[data-terrain-driver]");
     this.resolutionOutput = requireElement(root, "[data-terrain-resolution]");
+    this.trianglesOutput = requireElement(root, "[data-terrain-tris]");
     this.liveOutput = requireElement(root, "[data-terrain-live]");
     this.compareOutput = requireElement(root, "[data-terrain-compare]");
 
@@ -406,6 +485,11 @@ export class TerrainMeshingDemo extends BaseDemo {
     this.bindCheckbox("terrain-wireframe", (value) => {
       this.mesh.material.wireframe = value;
     });
+    this.bindSelect("terrain-display", (value) => {
+      this.previewMode =
+        value === "height" || value === "slope" || value === "normal" ? value : "terrain";
+      this.rebuildMesh();
+    });
     this.bindRange("terrain-resolution", (value) => {
       this.resolution = Math.round(value);
       this.rebuildMesh();
@@ -501,6 +585,7 @@ export class TerrainMeshingDemo extends BaseDemo {
     }
 
     this.lastBuildMs = performance.now() - start;
+    this.applyPreviewPalette(vertexCount);
 
     this.geometry.attributes.position.needsUpdate = true;
     this.geometry.attributes.normal.needsUpdate = true;
@@ -512,6 +597,7 @@ export class TerrainMeshingDemo extends BaseDemo {
     this.driverOutput.textContent =
       this.driver === "cpp" ? "WASM C++" : this.driver === "wat" ? "WASM WAT" : "JS typed";
     this.resolutionOutput.textContent = `${this.resolution} x ${this.resolution}`;
+    this.trianglesOutput.textContent = `${(indexCount / 3).toLocaleString()} tris`;
     this.liveOutput.textContent = `${this.lastBuildMs.toFixed(2)} ms / build`;
   }
 
@@ -609,13 +695,127 @@ export class TerrainMeshingDemo extends BaseDemo {
       );
     });
 
+    const patchSizes = [1, 9, 25];
+    const patchLines = patchSizes.map((chunkCount) => {
+      const steps = getPatchBenchmarkSteps(this.resolution, chunkCount);
+      const patchLabel =
+        chunkCount === 1 ? "1 x 1 chunk" : `${Math.sqrt(chunkCount).toFixed(0)} x ${Math.sqrt(chunkCount).toFixed(0)} chunks`;
+      const phaseStride = 0.173;
+
+      const typedStart = performance.now();
+      for (let step = 0; step < steps; step += 1) {
+        for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
+          buildTerrainTyped(
+            this.resolution,
+            this.phase + chunkIndex * phaseStride + step * 0.031,
+            this.amplitude,
+            this.roughness,
+            this.jsPositions,
+            this.jsNormals,
+            this.jsColors,
+            this.jsIndices,
+          );
+        }
+      }
+      const typedAverage = (performance.now() - typedStart) / steps;
+
+      const wasmWatStart = performance.now();
+      for (let step = 0; step < steps; step += 1) {
+        for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
+          this.wasm.build_terrain_mesh(
+            WASM_LAYOUT.terrainPositions,
+            WASM_LAYOUT.terrainNormals,
+            WASM_LAYOUT.terrainColors,
+            WASM_LAYOUT.terrainIndices,
+            this.resolution,
+            this.phase + chunkIndex * phaseStride + step * 0.031,
+            this.amplitude,
+            this.roughness,
+          );
+        }
+      }
+      const wasmWatAverage = (performance.now() - wasmWatStart) / steps;
+
+      const wasmCppStart = performance.now();
+      for (let step = 0; step < steps; step += 1) {
+        for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
+          this.cppWasm.build_terrain_mesh(
+            WASM_LAYOUT.terrainPositions,
+            WASM_LAYOUT.terrainNormals,
+            WASM_LAYOUT.terrainColors,
+            WASM_LAYOUT.terrainIndices,
+            this.resolution,
+            this.phase + chunkIndex * phaseStride + step * 0.031,
+            this.amplitude,
+            this.roughness,
+          );
+        }
+      }
+      const wasmCppAverage = (performance.now() - wasmCppStart) / steps;
+      const triangleCount = this.resolution * this.resolution * 2 * chunkCount;
+      const ratio =
+        typedAverage > wasmCppAverage
+          ? `WASM C++ ${(typedAverage / wasmCppAverage).toFixed(2)}x faster than JS typed`
+          : `JS typed ${(wasmCppAverage / typedAverage).toFixed(2)}x faster than WASM C++`;
+
+      return (
+        `${patchLabel} @ ${this.resolution} x ${this.resolution} (${triangleCount.toLocaleString()} tris total, ${steps} runs): ` +
+        `JS typed ${typedAverage.toFixed(2)} ms, WASM WAT ${wasmWatAverage.toFixed(2)} ms, ` +
+        `WASM C++ ${wasmCppAverage.toFixed(2)} ms. ${ratio}.`
+      );
+    });
+
     this.compareOutput.textContent =
-      `Terrain meshing sweep:\n${lines.join("\n")}\n` +
+      `Single chunk sweep:\n${lines.join("\n")}\n\n` +
+      `Chunk pack throughput:\n${patchLines.join("\n")}\n` +
       `This benchmark measures chunk generation only: height sampling, normals, colors, and index-buffer writes.\n` +
-      `Three.js rendering stays shared, so this is much closer to the real "should this kernel live in WASM?" question.\n` +
+      `Three.js rendering stays shared, so this stays focused on the CPU-side kernel.\n` +
+      `The chunk-pack section is the more engine-like case: one coarse JS-to-WASM call per chunk, repeated across a streaming patch.\n` +
       `The extra comparison also shows the difference between handwritten WAT and a compiled C++ kernel.`;
 
     this.rebuildMesh();
+  }
+
+  private applyPreviewPalette(vertexCount: number): void {
+    if (this.previewMode === "terrain") {
+      return;
+    }
+
+    const amplitudeScale = Math.max(this.amplitude * 2.35, 0.001);
+
+    for (let vertexIndex = 0; vertexIndex < vertexCount; vertexIndex += 1) {
+      const offset = vertexIndex * POSITION_STRIDE;
+      const height01 = clamp(0.5 + this.renderPositions[offset + 1] / amplitudeScale, 0, 1);
+      const slope = clamp(1 - this.renderNormals[offset + 1], 0, 1);
+
+      if (this.previewMode === "normal") {
+        writeColor(
+          this.renderColors,
+          offset,
+          this.renderNormals[offset] * 0.5 + 0.5,
+          this.renderNormals[offset + 1] * 0.5 + 0.5,
+          this.renderNormals[offset + 2] * 0.5 + 0.5,
+        );
+        continue;
+      }
+
+      if (this.previewMode === "slope") {
+        writeSlopeColor(this.renderColors, offset, slope);
+        continue;
+      }
+
+      const band = Math.floor(height01 * PREVIEW_PALETTE_STEPS) / PREVIEW_PALETTE_STEPS;
+      const contourDistance = Math.abs(height01 * PREVIEW_PALETTE_STEPS - Math.round(height01 * PREVIEW_PALETTE_STEPS));
+      const contour = contourDistance < 0.08 ? 0.16 : 0;
+
+      writeColor(
+        this.renderColors,
+        offset,
+        0.06 + band * 0.28 + contour,
+        0.16 + band * 0.48 + contour * 0.85,
+        0.3 + band * 0.44 + contour * 0.5,
+      );
+    }
   }
 
   private copyIntoRenderBuffers(

@@ -1,5 +1,6 @@
 import "./styles.css";
 
+import { CausticRelicDemo } from "./demos/caustic-relic-demo";
 import { IndexedGeometryDemo } from "./demos/indexed-geometry-demo";
 import { FrostedBlurLensDemo } from "./demos/frosted-blur-lens-demo";
 import { LightingStudioDemo } from "./demos/lighting-studio-demo";
@@ -347,6 +348,7 @@ app.innerHTML = `
           <span>PBR lookdev</span>
           <span>Shader FX</span>
           <span>Frosted glass</span>
+          <span>Caustic relic</span>
         </div>
       </div>
       <aside class="hero__snippet">
@@ -609,6 +611,99 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
       </div>
     </section>
 
+    <section class="relic-showcase swarm-lab" data-demo="reliclab">
+      <div class="swarm-lab__top">
+        <span class="demo-card__step">Step 04F</span>
+        <button class="demo-card__fullscreen" type="button" data-action="fullscreen">Full screen</button>
+      </div>
+      <div class="section-heading section-heading--compact">
+        <p class="section-heading__eyebrow">Hero Study</p>
+        <h2>Caustic Glass / Iridescent Relic</h2>
+      </div>
+      <p class="swarm-lab__lede">
+        Build one cinematic hero shot around transmission, thin-film iridescence, and projected caustic light so the material feels premium instead of merely transparent.
+      </p>
+      <div class="relic-showcase__grid">
+        <div class="relic-showcase__viewer">
+          <div class="demo-card__stage">
+            <canvas aria-label="Caustic glass relic demo"></canvas>
+            <span class="demo-card__fps">0 FPS</span>
+          </div>
+        </div>
+        <div class="relic-showcase__sidebar">
+          <details class="debug-panel" open>
+            <summary>Debug</summary>
+            <div class="control-group">
+              <h3>View</h3>
+              ${renderCameraModeRow()}
+              <label class="control-row">
+                <span>wireframe</span>
+                <input type="checkbox" data-control="relic-wireframe" />
+              </label>
+            </div>
+            <div class="control-group">
+              <h3>Relic</h3>
+              <label class="control-row">
+                <span>theme</span>
+                <select data-control="relic-theme">
+                  <option value="aqua" selected>Aqua</option>
+                  <option value="opal">Opal</option>
+                  <option value="amber">Amber</option>
+                </select>
+              </label>
+              <label class="control-row">
+                <span>roughness</span>
+                <input type="range" min="0.02" max="0.38" step="0.01" value="0.12" data-control="relic-roughness" />
+                <output>0.12</output>
+              </label>
+              <label class="control-row">
+                <span>thickness</span>
+                <input type="range" min="0.4" max="2.6" step="0.05" value="1.7" data-control="relic-thickness" />
+                <output>1.70</output>
+              </label>
+              <label class="control-row">
+                <span>iridescence</span>
+                <input type="range" min="0" max="1" step="0.02" value="0.92" data-control="relic-iridescence" />
+                <output>0.92</output>
+              </label>
+            </div>
+            <div class="control-group">
+              <h3>Light</h3>
+              <label class="control-row">
+                <span>caustics</span>
+                <input type="range" min="0" max="1.8" step="0.02" value="1.15" data-control="relic-caustics" />
+                <output>1.15</output>
+              </label>
+              <label class="control-row">
+                <span>distortion</span>
+                <input type="range" min="0" max="0.95" step="0.01" value="0.38" data-control="relic-distortion" />
+                <output>0.38</output>
+              </label>
+              <label class="control-row">
+                <span>glow</span>
+                <input type="range" min="0.2" max="1.8" step="0.02" value="1.05" data-control="relic-glow" />
+                <output>1.05</output>
+              </label>
+              <label class="control-row">
+                <span>animate</span>
+                <input type="checkbox" checked data-control="relic-animate" />
+              </label>
+            </div>
+          </details>
+          <p class="demo-card__note">
+            This is a pure renderer-side beauty pass. The caustic projections are shader-authored light patterns, the relic itself is a transmitted
+            mesh with iridescence and clearcoat, and the shell is there to push the silhouette into something that feels precious instead of generic.
+          </p>
+          <div class="demo-card__tags">
+            <span class="demo-card__tag">MeshPhysicalMaterial</span>
+            <span class="demo-card__tag">Iridescence</span>
+            <span class="demo-card__tag">Caustic shader</span>
+            <span class="demo-card__tag">Hero lookdev</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="swarm-section swarm-lab" data-demo="terrain">
       <div class="swarm-lab__top">
         <span class="demo-card__step">Benchmark</span>
@@ -616,13 +711,14 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
       </div>
       <div class="section-heading section-heading--compact">
         <p class="section-heading__eyebrow">Engine-style example</p>
-        <h2>Terrain chunk meshing: one preview, three builders</h2>
+        <h2>Terrain chunk meshing: one preview, three builders, two benchmarks</h2>
       </div>
       <div class="swarm-lab__grid">
         <div class="swarm-lab__copy">
           <p class="swarm-lab__lede">
             This is much closer to real engine-side C++ work: take a scalar field, generate packed vertex, normal, color, and index buffers,
             then hand those buffers to one shared Three.js mesh. The renderer stays exactly the same while the builder changes underneath it.
+            The preview palette can flip into height bands, slope heat, or normal view so the denser chunks still read clearly at the top end.
           </p>
           <div class="swarm-metrics">
             <article class="swarm-metric">
@@ -634,16 +730,20 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
               <strong data-terrain-resolution>128 x 128</strong>
             </article>
             <article class="swarm-metric">
+              <span>Triangles</span>
+              <strong data-terrain-tris>32,768 tris</strong>
+            </article>
+            <article class="swarm-metric">
               <span>Live build</span>
               <strong data-terrain-live>0.00 ms / build</strong>
             </article>
           </div>
           <p class="swarm-lab__note" data-terrain-compare>
-            Run compare to benchmark only the chunk builder. The preview render path stays shared across all modes.
+            Run compare to benchmark both a single chunk sweep and a streaming chunk-pack sweep. The preview render path stays shared across all modes.
             The live toggle lets you switch between JS typed arrays, handwritten WAT, and a real compiled C++ WASM kernel.
-            The compare sweep also includes a JS-object baseline so you can see where object-heavy code falls away first.
+            The single chunk sweep includes a JS-object baseline so you can see where object-heavy code falls away first, while the chunk-pack sweep leans into the more engine-like "stream a patch" case.
           </p>
-          <button class="swarm-lab__button" type="button" data-action="terrain-compare">Compare JS vs WASM</button>
+          <button class="swarm-lab__button" type="button" data-action="terrain-compare">Compare chunk + patch</button>
         </div>
         <div class="swarm-lab__viewer">
           <div class="demo-card__stage">
@@ -655,6 +755,15 @@ geometry.attributes.position.needsUpdate = true;</code></pre>
             <div class="control-group">
               <h3>View</h3>
               ${renderCameraModeRow()}
+              <label class="control-row">
+                <span>display</span>
+                <select data-control="terrain-display">
+                  <option value="terrain" selected>Terrain palette</option>
+                  <option value="height">Height bands</option>
+                  <option value="slope">Slope heatmap</option>
+                  <option value="normal">Normal view</option>
+                </select>
+              </label>
               <label class="control-row">
                 <span>wireframe</span>
                 <input type="checkbox" data-control="terrain-wireframe" />
@@ -741,6 +850,7 @@ try {
     new PbrLookdevBoardDemo(document.querySelector<HTMLElement>('[data-demo="pbrlab"]')!),
     new ShaderFxBenchDemo(document.querySelector<HTMLElement>('[data-demo="shaderfx"]')!),
     new FrostedBlurLensDemo(document.querySelector<HTMLElement>('[data-demo="frostlab"]')!),
+    new CausticRelicDemo(document.querySelector<HTMLElement>('[data-demo="reliclab"]')!),
     new TerrainMeshingDemo(document.querySelector<HTMLElement>('[data-demo="terrain"]')!, wasm, terrainCppWasm),
   ];
 

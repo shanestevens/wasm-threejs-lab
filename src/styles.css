@@ -486,7 +486,7 @@ output {
 
 .swarm-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
 }
 
@@ -545,9 +545,20 @@ output {
   margin-top: 84px;
 }
 
+.relic-showcase {
+  margin-top: 84px;
+}
+
 .frosted-showcase__grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.4fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.relic-showcase__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.26fr) minmax(320px, 0.42fr);
   gap: 20px;
   align-items: start;
 }
@@ -556,7 +567,17 @@ output {
   min-height: 720px;
 }
 
+.relic-showcase__viewer .demo-card__stage {
+  min-height: 760px;
+}
+
 .frosted-showcase__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.relic-showcase__sidebar {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -628,6 +649,10 @@ output {
   }
 
   .frosted-showcase__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .relic-showcase__grid {
     grid-template-columns: 1fr;
   }
 }
